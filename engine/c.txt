@@ -1,0 +1,94 @@
+{
+    "architecture": "amd64",
+    "config": {
+        "ExposedPorts": {
+            "6379/tcp": {}
+        },
+        "Env": ["PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin", "GOSU_VERSION=1.17", "REDIS_VERSION=7.4.2", "REDIS_DOWNLOAD_URL=http://download.redis.io/releases/redis-7.4.2.tar.gz", "REDIS_DOWNLOAD_SHA=4ddebbf09061cbb589011786febdb34f29767dd7f89dbe712d2b68e808af6a1f"],
+        "Entrypoint": ["docker-entrypoint.sh"],
+        "Cmd": ["redis-server"],
+        "Volumes": {
+            "/data": {}
+        },
+        "WorkingDir": "/data"
+    },
+    "created": "2025-01-06T16:14:31Z",
+    "history": [{
+        "created": "2025-01-06T16:14:31Z",
+        "created_by": "# debian.sh --arch 'amd64' out/ 'bookworm' '@1740355200'",
+        "comment": "debuerreotype 0.15"
+    }, {
+        "created": "2025-01-06T16:14:31Z",
+        "created_by": "RUN /bin/sh -c set -eux; \tgroupadd -r -g 999 redis; \tuseradd -r -g redis -u 999 redis # buildkit",
+        "comment": "buildkit.dockerfile.v0"
+    }, {
+        "created": "2025-01-06T16:14:31Z",
+        "created_by": "RUN /bin/sh -c set -eux; \tapt-get update; \tapt-get install -y --no-install-recommends \t\ttzdata \t; \trm -rf /var/lib/apt/lists/* # buildkit",
+        "comment": "buildkit.dockerfile.v0"
+    }, {
+        "created": "2025-01-06T16:14:31Z",
+        "created_by": "ENV GOSU_VERSION=1.17",
+        "comment": "buildkit.dockerfile.v0",
+        "empty_layer": true
+    }, {
+        "created": "2025-01-06T16:14:31Z",
+        "created_by": "RUN /bin/sh -c set -eux; \tsavedAptMark=\"$(apt-mark showmanual)\"; \tapt-get update; \tapt-get install -y --no-install-recommends ca-certificates gnupg wget; \trm -rf /var/lib/apt/lists/*; \tarch=\"$(dpkg --print-architecture | awk -F- '{ print $NF }')\"; \tcase \"$arch\" in \t\t'amd64') url='https://github.com/tianon/gosu/releases/download/1.17/gosu-amd64'; sha256='bbc4136d03ab138b1ad66fa4fc051bafc6cc7ffae632b069a53657279a450de3' ;; \t\t'arm64') url='https://github.com/tianon/gosu/releases/download/1.17/gosu-arm64'; sha256='c3805a85d17f4454c23d7059bcb97e1ec1af272b90126e79ed002342de08389b' ;; \t\t'armel') url='https://github.com/tianon/gosu/releases/download/1.17/gosu-armel'; sha256='f9969910fa141140438c998cfa02f603bf213b11afd466dcde8fa940e700945d' ;; \t\t'i386') url='https://github.com/tianon/gosu/releases/download/1.17/gosu-i386'; sha256='087dbb8fe479537e64f9c86fa49ff3b41dee1cbd28739a19aaef83dc8186b1ca' ;; \t\t'mips64el') url='https://github.com/tianon/gosu/releases/download/1.17/gosu-mips64el'; sha256='87140029d792595e660be0015341dfa1c02d1181459ae40df9f093e471d75b70' ;; \t\t'ppc64el') url='https://github.com/tianon/gosu/releases/download/1.17/gosu-ppc64el'; sha256='1891acdcfa70046818ab6ed3c52b9d42fa10fbb7b340eb429c8c7849691dbd76' ;; \t\t'riscv64') url='https://github.com/tianon/gosu/releases/download/1.17/gosu-riscv64'; sha256='38a6444b57adce135c42d5a3689f616fc7803ddc7a07ff6f946f2ebc67a26ba6' ;; \t\t's390x') url='https://github.com/tianon/gosu/releases/download/1.17/gosu-s390x'; sha256='69873bab588192f760547ca1f75b27cfcf106e9f7403fee6fd0600bc914979d0' ;; \t\t'armhf') url='https://github.com/tianon/gosu/releases/download/1.17/gosu-armhf'; sha256='e5866286277ff2a2159fb9196fea13e0a59d3f1091ea46ddb985160b94b6841b' ;; \t\t*) echo >&2 \"error: unsupported gosu architecture: '$arch'\"; exit 1 ;; \tesac; \twget -O /usr/local/bin/gosu.asc \"$url.asc\"; \twget -O /usr/local/bin/gosu \"$url\"; \techo \"$sha256 */usr/local/bin/gosu\" | sha256sum -c -; \texport GNUPGHOME=\"$(mktemp -d)\"; \tgpg --batch --keyserver hkps://keys.openpgp.org --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4; \tgpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu; \tgpgconf --kill all; \trm -rf \"$GNUPGHOME\" /usr/local/bin/gosu.asc; \tapt-mark auto '.*' > /dev/null; \t[ -z \"$savedAptMark\" ] || apt-mark manual $savedAptMark > /dev/null; \tapt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \tchmod +x /usr/local/bin/gosu; \tgosu --version; \tgosu nobody true # buildkit",
+        "comment": "buildkit.dockerfile.v0"
+    }, {
+        "created": "2025-01-06T16:14:31Z",
+        "created_by": "ENV REDIS_VERSION=7.4.2",
+        "comment": "buildkit.dockerfile.v0",
+        "empty_layer": true
+    }, {
+        "created": "2025-01-06T16:14:31Z",
+        "created_by": "ENV REDIS_DOWNLOAD_URL=http://download.redis.io/releases/redis-7.4.2.tar.gz",
+        "comment": "buildkit.dockerfile.v0",
+        "empty_layer": true
+    }, {
+        "created": "2025-01-06T16:14:31Z",
+        "created_by": "ENVREDIS_DOWNLOAD_SHA=4ddebbf09061cbb589011786febdb34f29767dd7f89dbe712d2b68e808af6a1f",
+        "comment": "buildkit.dockerfile.v0",
+        "empty_layer": true
+    }, {
+        "created": "2025-01-06T16:14:31Z",
+        "created_by": "RUN /bin/sh -c set -eux; \t\tsavedAptMark=\"$(apt-mark showmanual)\"; \tapt-get update; \tapt-get install -y --no-install-recommends \t\tca-certificates \t\twget \t\t\t\tdpkg-dev \t\tgcc \t\tlibc6-dev \t\tlibssl-dev \t\tmake \t; \trm -rf /var/lib/apt/lists/*; \t\twget -O redis.tar.gz \"$REDIS_DOWNLOAD_URL\"; \techo \"$REDIS_DOWNLOAD_SHA *redis.tar.gz\" | sha256sum -c -; \tmkdir -p /usr/src/redis; \ttar -xzf redis.tar.gz -C /usr/src/redis --strip-components=1; \trm redis.tar.gz; \t\tgrep -E '^ *createBoolConfig[(]\"protected-mode\",.*, *1 *,.*[)],$' /usr/src/redis/src/config.c; \tsed -ri 's!^( *createBoolConfig[(]\"protected-mode\",.*, *)1( *,.*[)],)$!\\10\\2!' /usr/src/redis/src/config.c; \tgrep -E '^ *createBoolConfig[(]\"protected-mode\",.*, *0 *,.*[)],$' /usr/src/redis/src/config.c; \t\tgnuArch=\"$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)\"; \textraJemallocConfigureFlags=\"--build=$gnuArch\"; \tdpkgArch=\"$(dpkg --print-architecture)\"; \tcase \"${dpkgArch##*-}\" in \t\tamd64 | i386 | x32) extraJemallocConfigureFlags=\"$extraJemallocConfigureFlags --with-lg-page=12\" ;; \t\t*) extraJemallocConfigureFlags=\"$extraJemallocConfigureFlags --with-lg-page=16\" ;; \tesac; \textraJemallocConfigureFlags=\"$extraJemallocConfigureFlags --with-lg-hugepage=21\"; \tgrep -F 'cd jemalloc && ./configure ' /usr/src/redis/deps/Makefile; \tsed -ri 's!cd jemalloc && ./configure !&'\"$extraJemallocConfigureFlags\"' !' /usr/src/redis/deps/Makefile; \tgrep -F \"cd jemalloc && ./configure $extraJemallocConfigureFlags \" /usr/src/redis/deps/Makefile; \t\texport BUILD_TLS=yes; \tmake -C /usr/src/redis -j \"$(nproc)\" all; \tmake -C /usr/src/redis install; \t\tserverMd5=\"$(md5sum /usr/local/bin/redis-server | cut -d' ' -f1)\"; export serverMd5; \tfind /usr/local/bin/redis* -maxdepth 0 \t\t-type f -not -name redis-server \t\t-exec sh -eux -c ' \t\t\tmd5=\"$(md5sum \"$1\" | cut -d\" \" -f1)\"; \t\t\ttest \"$md5\" = \"$serverMd5\"; \t\t' -- '{}' ';' \t\t-exec ln -svfT 'redis-server' '{}' ';' \t; \t\trm -r /usr/src/redis; \t\tapt-mark auto '.*' > /dev/null; \t[ -z \"$savedAptMark\" ] || apt-mark manual $savedAptMark > /dev/null; \tfind /usr/local -type f -executable -exec ldd '{}' ';' \t\t| awk '/=>/ { so = $(NF-1); if (index(so, \"/usr/local/\") == 1) { next }; gsub(\"^/(usr/)?\", \"\", so); printf \"*%s\\n\", so }' \t\t| sort -u \t\t| xargs -r dpkg-query --search \t\t| cut -d: -f1 \t\t| sort -u \t\t| xargs -r apt-mark manual \t; \tapt-get purge -y --auto-remove -o APT::AutoRemove::RecommendsImportant=false; \t\tredis-cli --version; \tredis-server --version # buildkit",
+        "comment": "buildkit.dockerfile.v0"
+    }, {
+        "created": "2025-01-06T16:14:31Z",
+        "created_by": "RUN /bin/sh -c mkdir /data && chown redis:redis /data # buildkit",
+        "comment": "buildkit.dockerfile.v0"
+    }, {
+        "created": "2025-01-06T16:14:31Z",
+        "created_by": "VOLUME [/data]",
+        "comment": "buildkit.dockerfile.v0",
+        "empty_layer": true
+    }, {
+        "created": "2025-01-06T16:14:31Z",
+        "created_by": "WORKDIR /data",
+        "comment": "buildkit.dockerfile.v0"
+    }, {
+        "created": "2025-01-06T16:14:31Z",
+        "created_by": "COPY docker-entrypoint.sh /usr/local/bin/ # buildkit",
+        "comment": "buildkit.dockerfile.v0"
+    }, {
+        "created": "2025-01-06T16:14:31Z",
+        "created_by": "ENTRYPOINT [\"docker-entrypoint.sh\"]",
+        "comment": "buildkit.dockerfile.v0",
+        "empty_layer": true
+    }, {
+        "created": "2025-01-06T16:14:31Z",
+        "created_by": "EXPOSE map[6379/tcp:{}]",
+        "comment": "buildkit.dockerfile.v0",
+        "empty_layer": true
+    }, {
+        "created": "2025-01-06T16:14:31Z",
+        "created_by": "CMD [\"redis-server\"]",
+        "comment": "buildkit.dockerfile.v0",
+        "empty_layer": true
+    }],
+    "os": "linux",
+    "rootfs": {
+        "type": "layers",
+        "diff_ids": ["sha256:5f1ee22ffb5e68686db3dcb6584eb1c73b5570615b0f14fabb070b96117e351d", "sha256:55f29078b6771c8e00f3f7c79ca547588423edb44153889ae47139a605f27eb0", "sha256:cbceaf8d047b3f25cec806bfd2ed207be2da1a3c4f574c0a2808fbe49e23df6b", "sha256:332db12f1f9ff3af06ae18a397a3bde3fe718b7ff699776410189e52dd301d61", "sha256:9fec1c0b7378ba81f51a916e9e350070e5aa4f1cd0e03e74d805b9b67c7631a7", "sha256:526f32d26111f54220f75718c4dab857c56f94bff35cccd57aafda624b83665c", "sha256:5f70bf18a086007016e948b04aed3b82103a36bea41755b6cddfaf10ace3c6ef", "sha256:14aea9d123dbbaff13addc05a8a6b96352adc8c9e5c10f0956c1eb6da5c1b37c"]
+    }
+}

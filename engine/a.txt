@@ -1,0 +1,19 @@
+curl -X GET "https://docker.hlmirror.com/v2/library/redis/manifests/latest"  -H "Accept: application/vnd.docker.distribution.manifest.v2+json" -H "Authorization: Bearer <token>"
+
+{
+    "manifests": [{
+        "annotations": {
+            "com.docker.official-images.bashbrew.arch": "amd64",
+            "com.docker.official-images.bashbrew.name": "redis"
+        },
+        "digest": "sha256:7f346df9cd82ade39512e2040acf3583e6af260b98c01fe525020bf89fb82783",
+        "mediaType": "application/vnd.oci.image.manifest.v1+json",
+        "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+        },
+        "size": 2483
+    }],
+    "mediaType": "application/vnd.oci.image.index.v1+json",
+    "schemaVersion": 2
+}
