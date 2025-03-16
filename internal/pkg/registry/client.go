@@ -3,6 +3,7 @@ package registry
 import (
 	"encoding/json"
 	"engine/internal/config"
+	"engine/internal/pkg/util"
 	"fmt"
 	"io"
 	"net/http"
@@ -41,6 +42,7 @@ func (c *Client) GetToken(Resourcetype, namespace, repository, action string) (s
 	var token struct {
 		Token string `json:"token"`
 	}
+	//	fmt.Println(string(body))
 	err = json.Unmarshal(body, &token)
 	if err != nil {
 		return "", err
@@ -131,13 +133,7 @@ func (c *Client) GetMinuteManifest(library, image, DigestOrTag string) (*ImageMa
 }
 func (c *Client) GetBlob(library, image, DigestOrTag string) error {
 	DigestOrTag = strings.TrimPrefix(DigestOrTag, "sha256:")
-	donloadpathfile := config.Conf.EnvConf.ImagesDataDir + "/" + DigestOrTag
-	if _, err := os.Stat(donloadpathfile); err == nil {
-		//文件已存在，不再下载
-		fmt.Println(DigestOrTag, "文件已存在，不再下载")
-		return nil
-	}
-	defer fmt.Println(DigestOrTag, "下载完成")
+	donloadpathfile := config.Conf.EnvConf.ImagesDataDir + "/" + "layer"
 	if library == "" {
 		library = "library"
 	}
@@ -145,7 +141,7 @@ func (c *Client) GetBlob(library, image, DigestOrTag string) error {
 	if err != nil {
 		return err
 	}
-	url := config.Conf.RegistryMirror + "/v2/" + library + "/" + image + "/blobs/" + DigestOrTag
+	url := config.Conf.RegistryMirror + "/v2/" + library + "/" + image + "/blobs/sha256:" + DigestOrTag
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return err
@@ -157,21 +153,9 @@ func (c *Client) GetBlob(library, image, DigestOrTag string) error {
 		return err
 	}
 	defer res.Body.Close()
-	var body []byte
-	body, _ = io.ReadAll(res.Body)
+	fmt.Println("Get Blob" + DigestOrTag)
+	return util.Xtar(res.Body, donloadpathfile)
 
-	//fmt.Println(donloadpathfile)
-	file, err := os.Create(donloadpathfile)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	_, err = file.Write(body)
-	fmt.Println(len(body))
-	if err != nil {
-		return err
-	}
-	return nil
 }
 func (c *Client) GetImageConfig(library, image, DigestOrTag string) error {
 	url := config.Conf.RegistryMirror + "/v2/" + library + "/" + image + "/blobs/" + DigestOrTag
