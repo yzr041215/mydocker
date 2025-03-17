@@ -44,7 +44,7 @@ func TestHash(t *testing.T) {
 	dirPath := "D:\\VS_Code_Project\\go\\MyDocker\\data\\layer"
 
 	f, _ := os.Open("D:\\VS_Code_Project\\go\\MyDocker\\data\\7cf63256a31a4cc44f6defe8e1af95363aee5fa75f30a248d95cae684f87c53c")
-	err := util.Xtar(f, dirPath)
+	_, err := util.Xtar(f, dirPath)
 	if err != nil {
 		fmt.Println(err)
 	}

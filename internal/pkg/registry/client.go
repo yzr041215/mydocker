@@ -154,8 +154,9 @@ func (c *Client) GetBlob(library, image, DigestOrTag string) error {
 	}
 	defer res.Body.Close()
 	fmt.Println("Get Blob" + DigestOrTag)
-	return util.Xtar(res.Body, donloadpathfile)
+	_, err = util.Xtar(res.Body, donloadpathfile)
 
+	return err
 }
 func (c *Client) GetImageConfig(library, image, DigestOrTag string) error {
 	url := config.Conf.RegistryMirror + "/v2/" + library + "/" + image + "/blobs/" + DigestOrTag
