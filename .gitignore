@@ -1,1 +1,3 @@
 data/
+config.json
+./internal/config/config.go

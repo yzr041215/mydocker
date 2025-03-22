@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 )
 
@@ -145,7 +146,11 @@ func (c *Client) GetBlob(library, image, DigestOrTag string) (d *layerdb.DiffDb,
 		if d2, err := layerdb.GetDiffDb(DigestOrTag); err == nil {
 			return d2, nil
 		}
-
+		//cache_id, err := distribution.GetCacheIDByDigest(DigestOrTag)
+		//if err != nil {
+		//	return nil, err
+		//}
+		//复用layer逻辑 把新建的diff文件link到../l/cache_id/diff
 		//TODO
 		return nil, errors.New("exist digest " + DigestOrTag)
 	}
@@ -181,11 +186,11 @@ func (c *Client) GetBlob(library, image, DigestOrTag string) (d *layerdb.DiffDb,
 	}
 	linkfile := filepath.Join(linkpath, linkId)
 	//是windwos 系统的话，不创建符号链接，直接返回
-	//if runtime.GOOS != "windows" {
-	if err := os.Symlink(filepath.Join("..", "cache_id", "diff"), linkfile); err != nil {
-		return nil, err
+	if runtime.GOOS != "windows" {
+		if err := os.Symlink(filepath.Join("..", cache_id, "diff"), linkfile); err != nil {
+			return nil, err
+		}
 	}
-	//}
 
 	//fmt.Println("diff_id: ", diff_id)
 	d = layerdb.NewDiffDb(cache_id, diff_id, size, linkId)

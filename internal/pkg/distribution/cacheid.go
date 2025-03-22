@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // 建立digest -> cacheID的映射
@@ -26,8 +27,10 @@ func SaveCacheID(digest string, CacheID string) error {
 	}
 	return nil
 }
-func GetCacheIDByDigest(imageID string) (string, error) {
 
+func GetCacheIDByDigest(imageID string) (string, error) {
+	//去除imageID前缀
+	imageID = strings.TrimPrefix(imageID, "sha256:")
 	f, err := os.Open(filepath.Join(config.Conf.EnvConf.ImagesDataDir, "image", "overlay2", "distribution", "cacheid-by-digest", imageID))
 	if err != nil {
 		return "", err

@@ -19,6 +19,7 @@ func IsExistDigest(diffID string) bool {
 
 // 建立digest -> diffID的映射
 func SaveDiffID(digest string, diffID string) error {
+
 	//保存diffID
 	//创建diffID文件
 	path := filepath.Join(config.Conf.EnvConf.ImagesDataDir, "image", "overlay2", "distribution", "diffid-by-digest")
@@ -35,7 +36,7 @@ func SaveDiffID(digest string, diffID string) error {
 	if err != nil {
 		return err
 	}
-	return nil
+	return SaveDigest(digest, diffID)
 }
 func GetDiffID(imageID string) (string, error) {
 	//获取diffID
