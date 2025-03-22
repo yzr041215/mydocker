@@ -96,6 +96,16 @@ func (d *DiffDb) Save() error {
 	} else {
 		return err
 	}
+
+	if f, err := os.Create(filepath.Join(path, "link")); err == nil {
+		defer f.Close()
+		if _, err := f.WriteString(d.LinkId); err != nil {
+			return err
+		}
+	} else {
+		return err
+	}
+
 	return nil
 }
 

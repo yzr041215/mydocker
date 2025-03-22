@@ -4,6 +4,7 @@ import (
 	config2 "engine/internal/config"
 	"engine/internal/pkg/distribution"
 	"engine/internal/pkg/imagedb"
+	"engine/internal/pkg/layerdb"
 	"engine/internal/pkg/repository"
 	"engine/internal/pkg/util"
 	"fmt"
@@ -32,14 +33,34 @@ func TestRunA(t *testing.T) {
 	}
 	fmt.Println("cacheid:", cacheid)
 	cachepath := filepath.Join(config2.Conf.EnvConf.ImagesDataDir, "overlay2", cacheid)
-	diffpath := filepath.Join(cachepath, "diff")
+	temp, err := layerdb.GetDiffDb(cacheid)
+	OwnLink := filepath.Join(config2.Conf.EnvConf.ImagesDataDir, "overlay2", "l", temp.LinkId)
+
+	//diffpath := filepath.Join(cachepath, "diff")
 	lowerpath := filepath.Join(cachepath, "lower")
-	wokepath := filepath.Join(cachepath, "woke")
+	workDir := filepath.Join(cachepath, "woke")
 	lowers, err := util.ReadLowers(lowerpath)
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Println("links:", lowers)
-	fmt.Println("diffpath:", diffpath)
-	fmt.Println("wokepath:", wokepath)
+	lowerOpt := ""
+	for _, lower := range lowers {
+		lowerOpt += lower + ":"
+	}
+	lowerOpt += OwnLink
+	upperDir := filepath.Join(cachepath, "upper")
+	mergedDir := filepath.Join(cachepath, "merged")
+	util.CreateFile2(upperDir)
+	util.CreateFile2(mergedDir)
+	fmt.Println("lowerOpt:", lowerOpt)
+	fmt.Println("upperDir:", upperDir)
+	fmt.Println("mergedDir:", mergedDir)
+	fmt.Println("workDir:", workDir)
+	options := fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", lowerOpt, upperDir, workDir)
+	if err := syscall.Mount("overlay", mergedDir, "overlay", 0, options); err != nil {
+		fmt.Printf("挂载 OverlayFS 时出错: %v\n", err)
+		return
+	}
+
+	fmt.Println("OverlayFS 挂载成功!")
 }
