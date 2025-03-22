@@ -10,6 +10,12 @@ import (
 	"sort"
 )
 
+func Sha256(data []byte) string {
+	h := sha256.New()
+	h.Write(data)
+	return hex.EncodeToString(h.Sum(nil))
+}
+
 // 计算文件的 SHA256 哈希值
 func CalculateFileHash(filePath string) (string, error) {
 	file, err := os.Open(filePath)

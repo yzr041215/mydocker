@@ -3,11 +3,15 @@ package registry
 import (
 	"encoding/json"
 	"engine/internal/config"
+	"engine/internal/pkg/distribution"
+	"engine/internal/pkg/imagedb"
+	"engine/internal/pkg/layerdb"
 	"engine/internal/pkg/util"
-	"fmt"
+	"errors"
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -120,43 +124,76 @@ func (c *Client) GetMinuteManifest(library, image, DigestOrTag string) (*ImageMa
 		return nil, err
 	}
 	defer file.Close()
-	_, err = file.Write(body)
-	if err != nil {
+
+	if _, err = file.Write(body); err != nil {
 		return nil, err
 	}
+
 	var manifests ImageManifest
 	err = json.Unmarshal(body, &manifests)
-	if err != nil {
-		return nil, err
-	}
-	return &manifests, nil
+	return &manifests, err
 }
-func (c *Client) GetBlob(library, image, DigestOrTag string) error {
+func (c *Client) GetBlob(library, image, DigestOrTag string) (d *layerdb.DiffDb, err error) {
 	DigestOrTag = strings.TrimPrefix(DigestOrTag, "sha256:")
-	donloadpathfile := config.Conf.EnvConf.ImagesDataDir + "/" + "layer"
+	donloadpathfile := filepath.Join(config.Conf.EnvConf.ImagesDataDir, "overlay2")
 	if library == "" {
 		library = "library"
 	}
+	// 对应digest的diff文件是否存在 下载过就不用下载了
+	if distribution.IsExistDigest(DigestOrTag) {
+		//如果是第一层，直接复用 ： （digest==changeId）的时候是第一层
+		if d2, err := layerdb.GetDiffDb(DigestOrTag); err == nil {
+			return d2, nil
+		}
+
+		//TODO
+		return nil, errors.New("exist digest " + DigestOrTag)
+	}
 	token, err := c.GetToken("repository", library, image, "pull")
 	if err != nil {
-		return err
+		return nil, err
 	}
 	url := config.Conf.RegistryMirror + "/v2/" + library + "/" + image + "/blobs/sha256:" + DigestOrTag
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	req.Header.Set("Accept", "application/vnd.docker.container.image.v1+json")
 	req.Header.Set("Authorization", "Bearer "+token)
+
 	res, err := c.client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer res.Body.Close()
-	fmt.Println("Get Blob" + DigestOrTag)
-	_, err = util.Xtar(res.Body, donloadpathfile)
+	cache_id := util.GenerateUUID()
 
-	return err
+	diff_id, size, err := util.Xtar(res.Body, filepath.Join(donloadpathfile, cache_id, "diff"))
+	if err != nil {
+		return nil, err
+	}
+
+	//创建./link文件  等会链接到../l/cache_id/diff
+	linkId := util.GenerateIinkUUID()
+	linkpath := filepath.Join(donloadpathfile, "l")
+	if err := os.MkdirAll(linkpath, 0755); err != nil {
+		return nil, err
+	}
+	linkfile := filepath.Join(linkpath, linkId)
+	//是windwos 系统的话，不创建符号链接，直接返回
+	//if runtime.GOOS != "windows" {
+	if err := os.Symlink(filepath.Join("..", "cache_id", "diff"), linkfile); err != nil {
+		return nil, err
+	}
+	//}
+
+	//fmt.Println("diff_id: ", diff_id)
+	d = layerdb.NewDiffDb(cache_id, diff_id, size, linkId)
+	if err := distribution.SaveCacheID(DigestOrTag, cache_id); err != nil {
+		return d, err
+	}
+
+	return d, distribution.SaveDiffID(DigestOrTag, diff_id)
 }
 func (c *Client) GetImageConfig(library, image, DigestOrTag string) error {
 	url := config.Conf.RegistryMirror + "/v2/" + library + "/" + image + "/blobs/" + DigestOrTag
@@ -175,18 +212,6 @@ func (c *Client) GetImageConfig(library, image, DigestOrTag string) error {
 		return err
 	}
 	defer res.Body.Close()
-	var body []byte
-	body, _ = io.ReadAll(res.Body)
-	//fmt.Println(string(body))
-	filepath := config.Conf.EnvConf.ImagesDataDir + "/" + "config" + ".json"
-	file, err := os.Create(filepath)
-	if err != nil {
-		return err
-	}
-	defer file.Close()
-	_, err = file.Write(body)
-	if err != nil {
-		return err
-	}
-	return nil
+	return imagedb.SavaConfigByReader(res.Body)
+
 }
