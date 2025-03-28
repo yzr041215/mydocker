@@ -13,8 +13,10 @@ func TestConfig(t *testing.T) {
 	fmt.Println(config.Conf)
 	fmt.Println(registry.NewClient().GetToken("repository", "library", "redis", "pull"))
 }
+
+// go test  -run ^TestPull2$ engine/internal/pkg/Test
 func TestPull2(t *testing.T) {
-	if err := registry.Pull("nginx"); err != nil {
+	if err := registry.Pull("mysql"); err != nil {
 		fmt.Println(err)
 	}
 }

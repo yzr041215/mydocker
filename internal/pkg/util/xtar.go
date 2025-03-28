@@ -149,6 +149,12 @@ func Xtar(reader io.Reader, outpath string) (sha256 string, size int64, err erro
 				return "", -1, err
 			}
 
+			err = os.Chmod(filePath, hdr.FileInfo().Mode())
+			if err != nil {
+				file.Close()
+				return "", -1, err
+			}
+
 			if _, err := io.Copy(file, tr); err != nil {
 				file.Close()
 				return "", -1, err
