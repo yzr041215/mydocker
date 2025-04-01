@@ -2,10 +2,12 @@ package util
 
 import (
 	config2 "engine/internal/config"
+	"golang.org/x/sys/unix"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 )
 
@@ -93,4 +95,20 @@ func IsMountPoint(path string) (bool, error) {
 
 	// 如果设备号不同，则说明是挂载点
 	return dev != parentDev, nil
+}
+
+var isUnifiedOnce sync.Once
+
+func IsCgroup2UnifiedMode() bool {
+	isUnifiedOnce.Do(func() {
+		var st unix.Statfs_t
+		err := unix.Statfs(unifiedMountpoint, &st)
+		if err != nil && os.IsNotExist(err) {
+			// For rootless containers, sweep it under the rug.
+			isUnified = false
+			return
+		}
+		isUnified = st.Type == unix.CGROUP2_SUPER_MAGIC
+	})
+	return isUnified
 }

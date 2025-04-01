@@ -18,7 +18,7 @@ var (
 )
 
 func init() {
-	configpath := "/home/yzr/Documents/mydocker/config.json"
+	configpath := "D:\\VS_Code_Project\\go\\MyDocker\\config.json"
 	Conf = &Config{}
 	f, err := os.Open(configpath)
 	if err != nil {
