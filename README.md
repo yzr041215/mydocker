@@ -1,5 +1,15 @@
+## my-docker Command Line Usage
+* sudo -E /usr/local/go/bin/go run main.go logs 2AD134F41C
+* sudo -E /usr/local/go/bin/go run main.go ps
+* sudo -E /usr/local/go/bin/go run main.go run -it -image mysql ls
+* sudo -E /usr/local/go/bin/go run main.go images
+* sudo -E /usr/local/go/bin/go run main.go pull nginx
+* sudo -E /usr/local/go/bin/go run main.go rm 2AD134F41C
+* sudo -E /usr/local/go/bin/go run main.go network create --driver bridge --subnet 192.168.0.0/24 my-network
+* sudo -E /usr/local/go/bin/go run main.go network list
+* sudo -E /usr/local/go/bin/go run main.go run -it -net my-network -image busybox /bin/sh
 
-/var/lib/docker/
+## my-docker 目录结构
 ├── image/
 │   └── overlay2/
 │       ├── distribution/
@@ -28,3 +38,14 @@
     └── <container-id>/                      # 每个容器对应一个目录
           ├── config.v2.json                   # 容器的配置文件
           └── <container-id>-json.log          # 容器的日志文件
+
+
+
+
+
+
+
+
+
+
+

@@ -1,6 +1,7 @@
 package registry
 
 import (
+	"engine/internal/pkg/imagedb"
 	"engine/internal/pkg/layerdb"
 	"engine/internal/pkg/repository"
 	"fmt"
@@ -15,15 +16,24 @@ func Pull(image string) error {
 	fmt.Println(m.Manifests[0].Digest)
 	m2, _ := NewClient().GetMinuteManifest("library", image, m.Manifests[0].Digest)
 	fmt.Println("-----------------pull layers-----------------")
-	err = NewClient().GetImageConfig("library", image, m2.Config.Digest)
+	ConfigDigest, err := NewClient().GetImageConfig("library", image, m2.Config.Digest)
 	if err != nil {
 		return err
 	}
+	ImageConfig, err := imagedb.GetConfig(ConfigDigest)
+	if err != nil {
+		return err
+	}
+	var OnlyDiffId string
+	if len(ImageConfig.RootFS.DiffIDs) == 1 {
+		OnlyDiffId = ImageConfig.RootFS.DiffIDs[0]
+	}
+
 	linkpaths := make([]string, 0)
 	diffDbs := make([]layerdb.DiffDb, 0)
 	for _, layer := range m2.Layers {
 
-		if d, err := NewClient().GetBlob("library", image, layer.Digest); err != nil {
+		if d, err := NewClient().GetBlob("library", image, layer.Digest, OnlyDiffId); err != nil {
 			fmt.Println("pulling layer: ", layer.Digest, " failed! ", err)
 		} else {
 			diffDbs = append(diffDbs, *d)
@@ -32,6 +42,7 @@ func Pull(image string) error {
 				fmt.Println(err)
 			}
 			linkpaths = append(linkpaths, "l/"+d.LinkId)
+
 			fmt.Println("pulling layer: ", layer.Digest, " size: ", layer.Size, "successfully!")
 		}
 	}

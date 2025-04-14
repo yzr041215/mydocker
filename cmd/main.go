@@ -1,8 +1,9 @@
 package cmd
 
 import (
-	"github.com/urfave/cli"
 	"os"
+
+	"github.com/urfave/cli"
 )
 
 func Cmd() {
@@ -12,7 +13,8 @@ func Cmd() {
 	rootCmd.Version = "1.0.0"
 	rootCmd.Commands = append(rootCmd.Commands, runCommand)
 
-	rootCmd.Commands = append(rootCmd.Commands, runCommand, Images())
+	rootCmd.Commands = append(rootCmd.Commands, runCommand, Images(), PullCommand())
+	rootCmd.Commands = append(rootCmd.Commands, PsCommand(), RmCommand(), LogsCommand(), NetworkCommand())
 	err := rootCmd.Run(os.Args)
 	if err != nil {
 		return

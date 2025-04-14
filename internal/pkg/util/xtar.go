@@ -10,6 +10,8 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"golang.org/x/sys/unix"
 )
 
 var (
@@ -117,6 +119,7 @@ func Xtar(reader io.Reader, outpath string) (sha256 string, size int64, err erro
 	defer gzipReader.Close()
 	midReader := NewMidSha256(gzipReader)
 	tr := tar.NewReader(midReader)
+	var pendingHardlinks []struct{ target, link string }
 
 	// 遍历TAR档案中的所有文件
 	for {
@@ -170,12 +173,50 @@ func Xtar(reader io.Reader, outpath string) (sha256 string, size int64, err erro
 			if err := os.Symlink(hdr.Linkname, filePath); err != nil {
 				return "", -1, err
 			}
+		case tar.TypeLink:
+			targetPath := filepath.Join(outpath, hdr.Linkname)
+			if _, err := os.Stat(targetPath); os.IsNotExist(err) {
+				// 若目标文件未解压，暂存硬链接请求
+				pendingHardlinks = append(pendingHardlinks, struct{ target, link string }{
+					target: targetPath,
+					link:   filePath,
+				})
+			} else {
+				if err := os.Link(targetPath, filePath); err != nil {
+					return "", -1, err
+				}
+			}
+		case tar.TypeChar, tar.TypeBlock:
+			dev := int(unix.Mkdev(uint32(hdr.Devmajor), uint32(hdr.Devminor)))
+			if err := unix.Mknod(filePath, uint32(hdr.Mode), dev); err != nil {
+				return "", -1, err
+			}
+		case tar.TypeFifo:
+			if err := unix.Mkfifo(filePath, uint32(hdr.Mode)); err != nil {
+				return "", -1, err
+			}
 		default:
 			// 忽略其他类型的文件（如设备文件）
 			continue
 		}
+		if len(hdr.Xattrs) > 0 {
+			for k, v := range hdr.Xattrs {
+				if err := unix.Setxattr(filePath, k, []byte(v), 0); err != nil {
+					return "", -1, err
+				}
+			}
+		}
 	}
-
+	// 解压完成后处理暂存的硬链接
+	for _, hl := range pendingHardlinks {
+		if _, err := os.Stat(hl.target); err == nil {
+			if err := os.Link(hl.target, hl.link); err != nil {
+				return "", -1, fmt.Errorf("无法创建硬链接 %s -> %s: %v", hl.link, hl.target, err)
+			}
+		} else {
+			return "", -1, fmt.Errorf("目标文件 %s 不存在，硬链接 %s 创建失败", hl.target, hl.link)
+		}
+	}
 	finalHash := midReader.Sum()
 	return finalHash, midReader.Size(), nil
 }

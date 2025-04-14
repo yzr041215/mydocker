@@ -134,7 +134,7 @@ func (c *Client) GetMinuteManifest(library, image, DigestOrTag string) (*ImageMa
 	err = json.Unmarshal(body, &manifests)
 	return &manifests, err
 }
-func (c *Client) GetBlob(library, image, DigestOrTag string) (d *layerdb.DiffDb, err error) {
+func (c *Client) GetBlob(library, image, DigestOrTag, OnlyDiffID string) (d *layerdb.DiffDb, err error) {
 	DigestOrTag = strings.TrimPrefix(DigestOrTag, "sha256:")
 	donloadpathfile := filepath.Join(config.Conf.EnvConf.ImagesDataDir, "overlay2")
 	if library == "" {
@@ -177,6 +177,11 @@ func (c *Client) GetBlob(library, image, DigestOrTag string) (d *layerdb.DiffDb,
 	if err != nil {
 		return nil, err
 	}
+	if OnlyDiffID != "" {
+		OnlyDiffID = strings.TrimPrefix(OnlyDiffID, "sha256:")
+		diff_id = OnlyDiffID
+
+	}
 
 	//创建./link文件  等会链接到../l/cache_id/diff
 	linkId := util.GenerateIinkUUID()
@@ -200,21 +205,21 @@ func (c *Client) GetBlob(library, image, DigestOrTag string) (d *layerdb.DiffDb,
 
 	return d, distribution.SaveDiffID(DigestOrTag, diff_id)
 }
-func (c *Client) GetImageConfig(library, image, DigestOrTag string) error {
+func (c *Client) GetImageConfig(library, image, DigestOrTag string) (digest string, err error) {
 	url := config.Conf.RegistryMirror + "/v2/" + library + "/" + image + "/blobs/" + DigestOrTag
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 	token, err := c.GetToken("repository", library, image, "pull")
 	if err != nil {
-		return err
+		return "", err
 	}
 	req.Header.Set("Authorization", "Bearer "+token)
 	req.Header.Set("Accept", "application/vnd.docker.container.image.v1+json")
 	res, err := c.client.Do(req)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer res.Body.Close()
 	return imagedb.SavaConfigByReader(res.Body)

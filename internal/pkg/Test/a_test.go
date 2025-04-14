@@ -30,11 +30,12 @@ func TestPull(t *testing.T) {
 	fmt.Println(m.Manifests[0].Digest)
 	m2, _ := registry.NewClient().GetMinuteManifest("library", image, m.Manifests[0].Digest)
 	fmt.Println("-")
-	err = registry.NewClient().GetImageConfig("library", image, m2.Config.Digest)
+	ConfigDigest, err := registry.NewClient().GetImageConfig("library", image, m2.Config.Digest)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
+	fmt.Println("-", ConfigDigest)
 	diffDbs := make([]layerdb.DiffDb, 0)
 	for _, layer := range m2.Layers {
 		fmt.Println("GetyBlob: ", layer.Digest)

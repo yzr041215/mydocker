@@ -8,7 +8,6 @@ import (
 	"engine/internal/pkg/util"
 	"fmt"
 	"path/filepath"
-	"strings"
 	"syscall"
 )
 
@@ -43,9 +42,9 @@ func Mount(image string) (rootfs string, err error) {
 	}
 	lowerOpt := ""
 	for _, lower := range lowers {
-		if strings.HasSuffix(lower, "diff") {
-			lowerOpt += lower + ":"
-		}
+		//if strings.HasSuffix(lower, "diff") {
+		lowerOpt += lower + ":"
+		//}
 	}
 	lowerOpt += OwnLink
 	upperDir := filepath.Join(cachepath, "upper")

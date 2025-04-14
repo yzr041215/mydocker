@@ -82,7 +82,7 @@ func SaveConfig(digest string, config *DockerImageConfig) error {
 	}
 	return nil
 }
-func SavaConfigByReader(reader io.Reader) error {
+func SavaConfigByReader(reader io.Reader) (string, error) {
 
 	var body []byte
 	body, _ = io.ReadAll(reader)
@@ -90,12 +90,12 @@ func SavaConfigByReader(reader io.Reader) error {
 
 	f, err := os.Create(configPath + "/" + digest)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer f.Close()
 	_, err = f.Write(body)
 	if err != nil {
-		return err
+		return "", err
 	}
-	return f.Sync()
+	return digest, f.Sync()
 }

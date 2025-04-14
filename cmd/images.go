@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"engine/internal/pkg/repository"
+	"fmt"
+
 	"github.com/urfave/cli"
 )
 
@@ -16,8 +18,9 @@ func Images() cli.Command {
 			if err != nil {
 				return err
 			}
+			fmt.Println("IMAGE")
 			for _, image := range list {
-				println(image)
+				fmt.Println(image)
 			}
 			return nil
 		},

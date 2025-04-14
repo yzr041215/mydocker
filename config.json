@@ -2,6 +2,6 @@
   {
     "registry-mirror": "https://docker.hlmirror.com",
     "env": {
-      "image_data_dir": "D:\\VS_Code_Project\\go\\MyDocker\\data"
+      "image_data_dir": "/home/yzr/Documents/mydocker/data"
     }
   }

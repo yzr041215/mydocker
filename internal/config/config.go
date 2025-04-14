@@ -18,7 +18,17 @@ var (
 )
 
 func init() {
-	configpath := "D:\\VS_Code_Project\\go\\MyDocker\\config.json"
+	Conf = &Config{
+		RegistryMirror: "https://docker.hlmirror.com", // 镜像仓库地址列表",
+		EnvConf: EnvConfig{
+			ImagesDataDir: "/etc/mydocker",
+		},
+	}
+
+	configpath := "/etc/mydocker/config.json"
+	if _, err := os.Stat(configpath); os.IsNotExist(err) {
+		return
+	}
 	Conf = &Config{}
 	f, err := os.Open(configpath)
 	if err != nil {

@@ -3,9 +3,11 @@ package cmd
 import (
 	"engine/internal/runc"
 	"fmt"
+
 	"github.com/urfave/cli"
 )
 
+// sudo -E /usr/local/go/bin/go run main.go run -it -image mysql
 // runCommand 定义了run命令的相关参数和行为
 var runCommand = cli.Command{
 	Name: "run",
@@ -20,13 +22,21 @@ var runCommand = cli.Command{
 			Name:  "d",
 			Usage: "detach container",
 		},
-		cli.StringFlag{ // 数据卷
+		cli.StringSliceFlag{ // 数据卷
 			Name:  "v",
-			Usage: "volume,e.g.: -v /ect/conf:/etc/conf",
+			Usage: "volume,e.g.: -v /ect/conf:/etc/conf -v /ect/logs:/etc/logs",
 		},
 		cli.StringFlag{ // 数据卷
 			Name:  "image",
 			Usage: "image name",
+		},
+		cli.StringSliceFlag{
+			Name:  "p",
+			Usage: "port mapping,e.g.: -p 8080:80 -p 8081:81",
+		},
+		cli.StringFlag{
+			Name:  "net",
+			Usage: "network mode,e.g.: -net networkname",
 		},
 		// 省略其他代码
 	},
@@ -37,10 +47,11 @@ var runCommand = cli.Command{
 	   3.调用Run function去准备启动容器:
 	*/
 	Action: func(context *cli.Context) error {
-		if len(context.Args()) < 1 {
-			return fmt.Errorf("missing container command")
-		}
 
+		// if len(context.Args()) < 1 {
+		// 	return fmt.Errorf("missing container command")
+		// }
+		fmt.Println("run command")
 		var cmdArray []string
 		for _, arg := range context.Args() {
 			cmdArray = append(cmdArray, arg)
@@ -56,11 +67,18 @@ var runCommand = cli.Command{
 		//	MemoryLimit: context.String("mem"),
 		//	CpuCfsQuota: context.Int("cpu"),
 		//}
-		image := context.String("image")
-		volume := context.String("v")
-		fmt.Println("volume:", volume)
+
 		fmt.Println("cmdArray:", cmdArray)
-		err := runc.RunContainer(tty, image)
+		image := context.String("image")
+		fmt.Println("image:", image)
+		volume := context.StringSlice("v")
+		fmt.Println("volume:", volume)
+		portMapping := context.StringSlice("p")
+		fmt.Println("port:", portMapping)
+		networkname := context.String("net")
+		fmt.Println("networkMode:", networkname)
+
+		err := runc.RunContainer(tty, image, cmdArray, volume, portMapping, networkname)
 		if err != nil {
 			return err
 		}
