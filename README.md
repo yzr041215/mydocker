@@ -1,13 +1,20 @@
 ## my-docker Command Line Usage
-* sudo -E /usr/local/go/bin/go run main.go logs 2AD134F41C
-* sudo -E /usr/local/go/bin/go run main.go ps
-* sudo -E /usr/local/go/bin/go run main.go run -it -image mysql ls
-* sudo -E /usr/local/go/bin/go run main.go images
-* sudo -E /usr/local/go/bin/go run main.go pull nginx
-* sudo -E /usr/local/go/bin/go run main.go rm 2AD134F41C
-* sudo -E /usr/local/go/bin/go run main.go network create --driver bridge --subnet 192.168.0.0/24 my-network
-* sudo -E /usr/local/go/bin/go run main.go network list
-* sudo -E /usr/local/go/bin/go run main.go run -it -net my-network -image busybox /bin/sh
+
+
+* mydocker  logs 2AD134F41C
+* mydocker  ps  
+* mydocker  run -it -image mysql /bin/bash   # 运行容器并进入交互模式 容器内主进程/bin/bash
+* mydocker  images
+* mydocker  pull nginx
+* mydocker  rm 2AD134F41C
+
+使用网络前要打开本地ip4转发：
+```
+echo 1 > /proc/sys/net/ipv4/ip_forward
+```
+* mydocker network create --driver bridge --subnet 192.168.0.0/24 my-network
+* mydocker network list
+* mydocker run main.go run -it -net my-network -image busybox /bin/sh  # 指定网络
 
 ## my-docker 目录结构
 ├── image/
