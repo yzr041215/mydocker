@@ -21,11 +21,11 @@ func init() {
 	Conf = &Config{
 		RegistryMirror: "https://docker.hlmirror.com", // 镜像仓库地址列表",
 		EnvConf: EnvConfig{
-			ImagesDataDir: "/etc/mydocker",
+			ImagesDataDir: "/home/yzr/mydocker",
 		},
 	}
 
-	configpath := "/etc/mydocker/config.json"
+	configpath := "/home/yzr/mydocker/config.json"
 	if _, err := os.Stat(configpath); os.IsNotExist(err) {
 		return
 	}

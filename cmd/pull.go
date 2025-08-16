@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"engine/internal/pkg/registry"
+	"fmt"
 
 	"github.com/urfave/cli"
 )
@@ -15,7 +16,11 @@ func PullCommand() cli.Command {
 		Description: "Pull images from remote repository",
 		Action: func(c *cli.Context) error {
 
-			registry.Pull(c.Args().First())
+			if err := registry.Pull(c.Args().First()); err != nil {
+				fmt.Println(err)
+				return err
+			}
+
 			return nil
 		},
 	}

@@ -8,21 +8,26 @@ import (
 )
 
 func Pull(image string) error {
+	fmt.Println("-----------------pull image:", image)
 	m, err := NewClient().GetManifest("library", image, "latest")
 	if err != nil {
 		fmt.Println(err)
+		return fmt.Errorf("pull manifest failed! %v", err)
 	}
+	// for _, manifest := range m.Manifests {
+	// 	fmt.Println(manifest.Digest)
+	// }
 	fmt.Println("-----------------pull manifest---------------")
 	fmt.Println(m.Manifests[0].Digest)
 	m2, _ := NewClient().GetMinuteManifest("library", image, m.Manifests[0].Digest)
 	fmt.Println("-----------------pull layers-----------------")
 	ConfigDigest, err := NewClient().GetImageConfig("library", image, m2.Config.Digest)
 	if err != nil {
-		return err
+		return fmt.Errorf("pull image config failed! %v", err)
 	}
 	ImageConfig, err := imagedb.GetConfig(ConfigDigest)
 	if err != nil {
-		return err
+		return fmt.Errorf("get image config failed! %v", err)
 	}
 	var OnlyDiffId string
 	if len(ImageConfig.RootFS.DiffIDs) == 1 {
