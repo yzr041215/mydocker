@@ -9,6 +9,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"syscall"
+
+	"github.com/sirupsen/logrus"
 )
 
 func Mount(image string) (rootfs string, err error) {
@@ -16,19 +18,19 @@ func Mount(image string) (rootfs string, err error) {
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("ImageSha256:", ImageSha256)
+	logrus.Info("ImageSha256:", ImageSha256)
 	config, err := imagedb.GetConfig(ImageSha256)
 	if err != nil {
 		return "", err
 	}
 	//最后一个DiffID即为镜像的ID
 	DiffID := config.RootFS.DiffIDs[len(config.RootFS.DiffIDs)-1]
-	fmt.Println("highest DiffID:", DiffID)
+	logrus.Info("highest DiffID:", DiffID)
 	cacheid, err := distribution.GetCacheIDByDiffID(DiffID)
 	if err != nil {
 		return "", err
 	}
-	fmt.Println("cacheid:", cacheid)
+	logrus.Info("cacheid:", cacheid)
 	cachepath := filepath.Join(config2.Conf.EnvConf.ImagesDataDir, "overlay2", cacheid)
 
 	OwnLink := filepath.Join(cachepath, "diff")
@@ -53,14 +55,13 @@ func Mount(image string) (rootfs string, err error) {
 	util.CreateDir(upperDir)
 	util.CreateDir(mergedDir)
 	util.CreateDir(workDir)
-	fmt.Println("lowerOpt:", lowerOpt)
-	fmt.Println("upperDir:", upperDir)
-	fmt.Println("mergedDir:", mergedDir)
-	fmt.Println("workDir:", workDir)
+	logrus.Info("lowerOpt:", lowerOpt)
+	logrus.Info("upperDir:", upperDir)
+	logrus.Info("mergedDir:", mergedDir)
+	logrus.Info("workDir:", workDir)
 
 	if ok, err := util.IsMountPoint(mergedDir); ok || err != nil {
-		fmt.Println("------------------have mount in mergedDir---------------")
-		fmt.Println("mergedDir:", mergedDir)
+		logrus.Info("------------------have mount in mergedDir-", mergedDir)
 		return mergedDir, err
 	}
 	//mount proc
@@ -77,6 +78,6 @@ func Mount(image string) (rootfs string, err error) {
 		return "", fmt.Errorf("mount overlayfs failed: %v", err)
 	}
 
-	fmt.Println("OverlayFS 挂载成功!")
+	logrus.Info("mergedDir:", mergedDir)
 	return mergedDir, nil
 }

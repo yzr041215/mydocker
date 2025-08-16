@@ -1,12 +1,11 @@
 ## my-docker Command Line Usage
 
 
-* mydocker  logs 2AD134F41C
-* mydocker  ps  
+* mydocker  pull nginx   # 下载 nginx 镜像
 * mydocker  run -it -image mysql /bin/bash   # 运行容器并进入交互模式 容器内主进程/bin/bash
+* mydocker  ps  
 * mydocker  images
-* mydocker  pull nginx
-* mydocker  rm 2AD134F41C
+* mydocker  rm <container-id>
 
 使用网络前要打开本地ip4转发：
 ```
@@ -14,9 +13,20 @@ echo 1 > /proc/sys/net/ipv4/ip_forward
 ```
 * mydocker network create --driver bridge --subnet 192.168.0.0/24 my-network
 * mydocker network list
-* mydocker run main.go run -it -net my-network -image busybox /bin/sh  # 指定网络
-
-## my-docker 目录结构
+![alt text](assert/image.png)
+由于容器内部需要一个主程序运行，目前采取手动命令启动
+```shell
+./docker-entrypoint.sh 'nginx -g "daemon off;"' # 启动 nginx 容器
+```
+* ./mydocker run -p 91:80 -image nginx ./docker-entrypoint.sh 'nginx -g "daemon off;"'  -net my-network
+![alt text](assert/image-4.png)
+我们可以使用nsenter工具进入容器内部，查看ip是否配置正确：能不能访问外部网络
+![alt text](assert/image-1.png)
+直接访问容器ip可以成功访问到nginx服务
+![alt text](assert/image-2.png)
+端口映射页成功了！
+![alt text](assert/image-3.png)
+## my-docker 存储目录结构
 ├── image/
 │   └── overlay2/
 │       ├── distribution/

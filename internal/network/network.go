@@ -375,13 +375,35 @@ func deletePortMapping(ep *Endpoint) error {
 
 // configPortMapping 配置端口映射
 func configPortMapping(ep *Endpoint, isDelete bool) error {
+
+	// 	# 允许桥接网络内部的设备访问外网
+	// iptables -A FORWARD -i my-network -o eth0 -j ACCEPT
+	iptablesCmd0 := fmt.Sprintf("-A FORWARD -i %s -o eth0 -j ACCEPT", ep.Network.Name)
+	cmd0 := exec.Command("iptables", strings.Split(iptablesCmd0, " ")...)
+	output0, err0 := cmd0.Output()
+	logrus.Infoln("配置允许桥接网络内部的设备访问外网 FORWARD cmd0:", cmd0.String())
+	if err0 != nil {
+		logrus.Error("iptables Output ", output0)
+	}
+
+	//作用
+	//iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE
+	iptablesCmd_postrouting := fmt.Sprintf("-t nat -A POSTROUTING -o eth0 -j MASQUERADE")
+	cmd_postrouting := exec.Command("iptables", strings.Split(iptablesCmd_postrouting, " ")...)
+	output_postrouting, err_postrouting := cmd_postrouting.Output()
+	logrus.Infoln("配置masquerade cmd_postrouting:", cmd_postrouting.String())
+	if err_postrouting != nil {
+		logrus.Error("iptables Output ", output_postrouting)
+	}
+
 	action := "-A"
 	if isDelete {
 		action = "-D"
 	}
 
 	var err error
-	// 遍历容器端口映射列表
+	// 遍历容器端口映射列表\
+	logrus.Info("=====", ep.PortMapping)
 	for _, pm := range ep.PortMapping {
 		// 分割成宿主机的端口和容器的端口
 		portMapping := strings.Split(pm, ":")
@@ -393,6 +415,7 @@ func configPortMapping(ep *Endpoint, isDelete bool) error {
 		// 在iptables的PREROUTING中添加DNAT规则
 		// 将宿主机的端口请求转发到容器的地址和端口上
 		// iptables -t nat -A PREROUTING ! -i testbridge -p tcp -m tcp --dport 8080 -j DNAT --to-destination 10.0.0.4:80
+
 		iptablesCmd := fmt.Sprintf("-t nat %s PREROUTING ! -i %s -p tcp -m tcp --dport %s -j DNAT --to-destination %s:%s",
 			action, ep.Network.Name, portMapping[0], ep.IPAddress.String(), portMapping[1])
 		cmd := exec.Command("iptables", strings.Split(iptablesCmd, " ")...)
@@ -403,6 +426,17 @@ func configPortMapping(ep *Endpoint, isDelete bool) error {
 			logrus.Errorf("iptables Output, %v", output)
 			continue
 		}
+		//iptables -t nat -A OUTPUT -p tcp --dport 90 -j DNAT --to-destination 192.168.0.2:80
+		iptablesCmd2 := fmt.Sprintf("-t nat %s OUTPUT -p tcp --dport %s -j DNAT --to-destination %s:%s",
+			action, portMapping[0], ep.IPAddress.String(), portMapping[1])
+		cmd2 := exec.Command("iptables", strings.Split(iptablesCmd2, " ")...)
+		logrus.Infoln("配置端口映射 DNAT cmd2:", cmd2.String())
+		output2, err2 := cmd2.Output()
+		if err2 != nil {
+			logrus.Errorf("iptables Output, %v", output2)
+			continue
+		}
+
 	}
 	return err
 }

@@ -1,7 +1,7 @@
 
   {
-    "registry-mirror": "https://docker.hlmirror.com",
+    "registry-mirror": "https://lispy.org",
     "env": {
-      "image_data_dir": "/home/yzr/Documents/mydocker/data"
+      "image_data_dir": "/home/yzr/mydocker/data"
     }
   }

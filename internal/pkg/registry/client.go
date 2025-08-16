@@ -8,6 +8,7 @@ import (
 	"engine/internal/pkg/layerdb"
 	"engine/internal/pkg/util"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"os"
@@ -34,6 +35,7 @@ func (c *Client) GetToken(Resourcetype, namespace, repository, action string) (s
 		namespace = "library"
 	}
 	url := config.Conf.RegistryMirror + "/token?service=registry.docker.io&scope=" + "repository:" + namespace + "/" + repository + ":" + action
+	//fmt.Println("url: ", url)
 	res, err := c.client.Get(url)
 	if err != nil {
 		return "", err
@@ -63,32 +65,32 @@ func (c *Client) GetManifest(library, image, tag string) (*Manifests, error) {
 	}
 	token, err := c.GetToken("repository", library, image, "pull")
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get token error: %v", err)
 	}
 
 	url := config.Conf.RegistryMirror + "/v2/" + library + "/" + image + "/manifests/" + tag
 
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("create request error: %v", err)
 	}
 	req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.v2+json")
 	req.Header.Set("Authorization", "Bearer "+token)
 	res, err := c.client.Do(req)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("do request error: %v", err)
 	}
 	defer res.Body.Close()
 	body, err := io.ReadAll(res.Body)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("read response body error: %v", err)
 	}
 	var manifests Manifests
 	//fmt.Println("tag: ", tag)
 	//fmt.Println(string(body))
 	err = json.Unmarshal(body, &manifests)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("unmarshal manifests error: %v", err)
 	}
 	return &manifests, nil
 }
@@ -180,7 +182,6 @@ func (c *Client) GetBlob(library, image, DigestOrTag, OnlyDiffID string) (d *lay
 	if OnlyDiffID != "" {
 		OnlyDiffID = strings.TrimPrefix(OnlyDiffID, "sha256:")
 		diff_id = OnlyDiffID
-
 	}
 
 	//创建./link文件  等会链接到../l/cache_id/diff

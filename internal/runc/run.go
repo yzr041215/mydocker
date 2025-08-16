@@ -13,6 +13,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
 )
 
@@ -37,7 +38,7 @@ func BindVolume(rootfs string, volumes []string) error {
 		if err := syscall.Mount(src, dst, "", syscall.MS_BIND, ""); err != nil {
 			return err
 		}
-		fmt.Println("bind volume [", volume, "] success!")
+		logrus.Info("bind volume [", volume, "] success!")
 	}
 	return nil
 }
@@ -59,7 +60,7 @@ func UnbindVolume(rootfs string, volumes []string) error {
 		if err := syscall.Unmount(dst, 0); err != nil {
 			return err
 		}
-		fmt.Println("unbind volume success!")
+		logrus.Info("unbind volume success!")
 	}
 	return nil
 }
@@ -68,24 +69,23 @@ func RunContainer(tty bool, image string, cmdArray []string, volume, portMapping
 
 	rootfs, err := Mount(image)
 	if err != nil {
-		fmt.Println("Mount rootfs failed:", err)
+		logrus.Error("Mount rootfs failed:", err)
 		return err
 	}
 	err = BindVolume(rootfs, volume)
 	if err != nil {
-		fmt.Println("Bind volume failed:", err)
+		logrus.Error("Bind volume failed:", err)
 		return err
 	}
 	defer UnbindVolume(rootfs, volume)
 	// 步骤1: 创建容器
 	containerId := containers.GenContainerId() // 生成 10 位容器 id
-	fmt.Println("=-----------------ContainerId:", containerId)
-	//rootfs := "/home/yzr/Documents/mydocker/data/overlay2/e518df1ad4972f366a0a74b1a2e0859e5262ed03825a700e6a06b4a5d782daa9/merged"
+	logrus.Info("=-----------------ContainerId:", containerId)
 	var cmd *exec.Cmd
 	if cmd, err = Run(tty, rootfs, containerId, cmdArray); err != nil {
-		fmt.Println("Run failed:", err)
+		logrus.Error("Run failed:", err)
 	} else {
-		fmt.Println("Run success!", cmd.Process.Pid)
+		logrus.Info("Run success!", cmd.Process.Pid)
 	}
 	var containerIp string
 	if networkname != "" {
@@ -96,10 +96,10 @@ func RunContainer(tty bool, image string, cmdArray []string, volume, portMapping
 		}
 		ip, err := network.Connect(networkname, containerInfo)
 		if err != nil {
-			fmt.Println("Connect failed:", err)
+			logrus.Error("Connect failed:", err)
 			return err
 		} else {
-			fmt.Println("Connect success! ip:", ip.String())
+			logrus.Info("Connect success! ip:", ip.String())
 		}
 		containerIp = ip.String()
 	}
@@ -120,16 +120,21 @@ func RunContainer(tty bool, image string, cmdArray []string, volume, portMapping
 		if networkname != "" {
 			err := network.Disconnect(networkname, info)
 			if err != nil {
-				fmt.Println("DisConnect failed:", err)
+				logrus.Error("DisConnect failed:", err)
 			} else {
-				fmt.Println("DisConnect success!")
+				logrus.Info("DisConnect success!")
 			}
 		}
 		//umount rootfs
 		if err := syscall.Unmount(rootfs, 0); err != nil {
-			fmt.Println("Unmount rootfs failed:", err)
+			logrus.Error("Unmount rootfs failed:", err)
 		} else {
-			fmt.Println("Unmount rootfs success!")
+			logrus.Info("Unmount rootfs success!")
+		}
+		if err := syscall.Unmount(rootfs+"/proc", 0); err != nil {
+			logrus.Error("Unmount proc failed:", err)
+		} else {
+			logrus.Info("Unmount proc success!")
 		}
 		// 保存容器信息
 		containers.SaveContainerInfo(&containers.ContainerInfo{
@@ -146,21 +151,21 @@ func RunContainer(tty bool, image string, cmdArray []string, volume, portMapping
 		})
 	}()
 	if tty {
-		fmt.Println("Container run in foreground, pid:", cmd.Process.Pid)
+		logrus.Info("Container run in foreground, pid:", cmd.Process.Pid)
 		cmd.Wait()
 
-		fmt.Println("Container exited")
+		logrus.Info("Container exited")
 	} else {
-		fmt.Println("Container run in background, pid:", cmd.Process.Pid, " ppid :", os.Getpid())
+		logrus.Info("Container run in background, pid:", cmd.Process.Pid, " ppid :", os.Getpid())
 		cmd.Process.Wait()
 
-		fmt.Println("Container Exit!!")
+		logrus.Info("Container Exit!!")
 	}
 	return nil
 }
 func Run(tty bool, rootfs string, containerId string, cmdArray []string) (cmd *exec.Cmd, err error) {
 
-	fmt.Println("Main Process Pid :", os.Getpid())
+	logrus.Info("Main Process Pid :", os.Getpid())
 
 	cmd = exec.Command("/bin/sh", "-c", fmt.Sprintf(`
 		
@@ -182,7 +187,7 @@ func Run(tty bool, rootfs string, containerId string, cmdArray []string) (cmd *e
 		grep Cap /proc/self/status
 		# 步骤5: 进入容器环境
 		echo '正在进入容器环境...'
-		exec chroot %q  /bin/sh -c 'echo "容器内 hostname: ";whoami; exec %s'
+		exec chroot %q  /bin/sh  -c 'echo "容器内 hostname: ";whoami; exec %s'
 	`, rootfs, rootfs, strings.Join(cmdArray, " ")))
 
 	cmd.Dir = "/" // 工作目录为根目录
@@ -190,41 +195,41 @@ func Run(tty bool, rootfs string, containerId string, cmdArray []string) (cmd *e
 	if err := unix.Prctl(unix.PR_CAPBSET_READ, unix.CAP_SYS_CHROOT, 0, 0, 0); err != nil {
 		log.Fatal("Prctl failed:", err)
 	}
+	//CAP_MKNOD
+	if err := unix.Prctl(unix.PR_CAPBSET_READ, unix.CAP_MKNOD, 0, 0, 0); err != nil {
+		log.Fatal("Prctl failed:", err)
+	}
 	// 设置新的命名空间
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Cloneflags: syscall.CLONE_NEWUSER |
-			syscall.CLONE_NEWUTS |
+		Cloneflags:
+		//syscall.CLONE_NEWUSER |
+		syscall.CLONE_NEWUTS |
 			syscall.CLONE_NEWPID |
 			syscall.CLONE_NEWNET |
 			syscall.CLONE_NEWNS |
 			syscall.CLONE_NEWIPC |
 			syscall.CLONE_NEWTIME,
-		UidMappings: []syscall.SysProcIDMap{
-			{ContainerID: 0, HostID: 1000, Size: 1},
-		},
+		// UidMappings: []syscall.SysProcIDMap{
+		// 	{ContainerID: 0, HostID: 1000, Size: 1},
+		// },
 
-		GidMappings: []syscall.SysProcIDMap{
-			{ContainerID: 0, HostID: 1000, Size: 1},
-		},
-		Credential: &syscall.Credential{
-			Uid: 0, // 容器内 root
-			Gid: 0,
-		},
-		//Chroot: rootfs, // 切换根目录as
+		// GidMappings: []syscall.SysProcIDMap{
+		// 	{ContainerID: 0, HostID: 1000, Size: 1},
+		// },
+		// Credential: &syscall.Credential{
+		// 	Uid: 0, // 容器内 root
+		// 	Gid: 0,
+		// },
 
-		GidMappingsEnableSetgroups: false, // 开启 GID 映射
-		//Setsid:                     true,  // 新会话
-		//Setctty:                    true,
-		// 关键：在 fork 后、exec 前设置主机名
-
+		//GidMappingsEnableSetgroups: false, // 开启 GID 映射
 	}
 
 	// 启动命令
-	fmt.Println("启动 bash 进程...")
+	logrus.Info("启动 bash 进程...")
 	if tty {
 		//前台运行
-		fmt.Println("正在前台运行...")
-		fmt.Println("containerId:", containerId)
+		logrus.Info("正在前台运行...")
+		logrus.Info("containerId:", containerId)
 		cmd.Stdin = os.Stdin
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
@@ -232,12 +237,12 @@ func Run(tty bool, rootfs string, containerId string, cmdArray []string) (cmd *e
 		//重定向输出到文件
 		dir := fmt.Sprintf(config.Conf.EnvConf.ImagesDataDir+"/containers/%s", containerId)
 		if err := os.MkdirAll(dir, os.ModePerm); err != nil {
-			fmt.Println("创建容器目录失败:", err)
+			logrus.Info("创建容器目录失败:", err)
 			return nil, err
 		}
 		f, err := os.OpenFile(fmt.Sprintf(config.Conf.EnvConf.ImagesDataDir+"/containers/%s/log.log", containerId), os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 		if err != nil {
-			fmt.Println("打开日志文件失败:", err)
+			logrus.Info("打开日志文件失败:", err)
 			return nil, err
 		}
 		//cmd.Stdin = os.Stdin
